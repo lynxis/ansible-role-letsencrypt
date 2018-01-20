@@ -47,8 +47,8 @@ letsencrypt_default_key_owner: 'root'
 letsencrypt_default_key_group: 'root'
 letsencrypt_default_key_permissions: '0600'
 
-# the minimum age (in days) after which a certificate will be renewed
-letsencrypt_min_renewal_age: 60
+# how many days the certificate must be valid
+letsencrypt_min_valid_days: 30
 
 # the days of a month the cronjob should be run. Make sure to run it rather often, three times per month is a pretty
 # good value. It does not harm to run it often, as it will only regenerate certificates that have passed a certain age
