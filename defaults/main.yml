@@ -7,6 +7,14 @@ acme_tiny_software_directory: '/usr/local/letsencrypt'
 acme_tiny_data_directory: '/var/lib/letsencrypt'
 acme_tiny_challenges_directory: '/var/www/letsencrypt'
 
+# When initialy creates a certificate, there is a chicken/egg problem.
+# The webserver refuses to start without a valid certificate, but acme_tiny needs
+# a webserver to generate a certificate.
+# For such cases the it might be a good idea to create a dummy certificate which is self-signed
+# and only valid for one day.
+# It will be replaced by a real valid certificate when renew.py runs for the first time.
+letsencrypt_create_dummy_cert: False
+
 # Path to the local file containing the account key to copy to the server.
 # Secure this file using Git-crypt for example.
 # Leave this blank to generate a new account key that will need to be registered manually with Letsencrypt.org

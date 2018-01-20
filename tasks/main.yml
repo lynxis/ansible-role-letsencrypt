@@ -178,7 +178,28 @@
   failed_when: (generate_initial_cert.stdout is defined and
     ('error' in generate_initial_cert.stdout or 'Error' in generate_initial_cert.stdout
       or 'Error' in generate_initial_cert.stderr))
-  when: (generated_csr_single | changed) or (generated_csr_multi | changed) or (generated_key | changed) or (item.stat.exists == False)
+  when: ((generated_csr_single | changed) or (generated_csr_multi | changed) or (generated_key | changed) or (item.stat.exists == False)) and (letsencrypt_create_dummy_cert == True)
+  with_items: "{{ stat_cert.results }}"
+  tags: ['letsencrypt_keys']
+
+# dummy certificate
+- name: generate a dummy certificates valid for one day
+  shell: "openssl x509 -req -days 1 -in '{{ acme_tiny_data_directory }}/csrs/{{ item.item.name }}.csr' -signkey '{{ item.item.keypath }}' -out '{{ item.item.certpath }}'"
+  args:
+    executable: "/bin/bash"
+    creates: "{{ item.item.certpath }}"
+  # become_user: "{{ letsencrypt_user }}"
+  when: (item.stat.exists == False) and (letsencrypt_create_dummy_cert == True)
+  with_items: "{{ stat_cert.results }}"
+  tags: ['letsencrypt_keys']
+
+- name: "dummy certificate: copy self signed to chained"
+  copy:
+    src: "{{ item.item.certpath }}"
+    dest: "{{ item.item.chainedcertpath }}"
+    remote_src: yes
+  become_user: "{{ letsencrypt_user }}"
+  when: (item.stat.exists == False) and (letsencrypt_create_dummy_cert == True)
   with_items: "{{ stat_cert.results }}"
   tags: ['letsencrypt_keys']
 
