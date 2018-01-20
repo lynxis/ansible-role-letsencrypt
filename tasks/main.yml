@@ -4,6 +4,12 @@
 # one time setup
 #################################################
 
+- name: install requirements
+  apt: "name={{ item }}"
+  with_items:
+    - git
+    - python3
+
 - name: create data directory
   file:
     path: '{{ acme_tiny_data_directory }}'
