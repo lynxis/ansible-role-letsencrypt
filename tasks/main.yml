@@ -129,6 +129,7 @@
   args:
     creates: "{{ item.keypath }}"
   with_items: "{{ letsencrypt_certs }}"
+  register: generated_key
   tags: ['letsencrypt_keys']
 
 # todo this leaves a very very tiny timeframe where the keys are potentially not secured; this is only relevant if the
@@ -148,15 +149,23 @@
     creates: "{{ acme_tiny_data_directory }}/csrs/{{ item.name }}.csr"
   when: item.host is string
   with_items: "{{ letsencrypt_certs }}"
+  register: generated_csr_single
   tags: ['letsencrypt_keys']
 
+# we must use bash here because dash (default on Debian) throws an error "unexpected ( on line 1"
 - name: generate csrs for multi domain keys
   shell: "openssl req -new -sha256 -key '{{ item.keypath }}' -subj '/' -reqexts SAN -config <(cat /etc/ssl/openssl.cnf <(printf '[SAN]\nsubjectAltName=DNS:{{ item.host|join(',DNS:') }}')) > {{ acme_tiny_data_directory }}/csrs/{{ item.name }}.csr"
   args:
-    # we must use bash here because dash (default on Debian) throws an error "unexpected ( on line 1"
     executable: "/bin/bash"
     creates: "{{ acme_tiny_data_directory }}/csrs/{{ item.name }}.csr"
   when: item.host is not string
+  with_items: "{{ letsencrypt_certs }}"
+  register: generated_csr_multi
+  tags: ['letsencrypt_keys']
+
+- name: check if cert already exists
+  stat: path={{ item.certpath }}
+  register: stat_cert
   with_items: "{{ letsencrypt_certs }}"
   tags: ['letsencrypt_keys']
 
@@ -169,6 +178,27 @@
   failed_when: (generate_initial_cert.stdout is defined and
     ('error' in generate_initial_cert.stdout or 'Error' in generate_initial_cert.stdout
       or 'Error' in generate_initial_cert.stderr))
+  when: (generated_csr_single | changed) or (generated_csr_multi | changed) or (generated_key | changed) or (item.stat.exists == False)
+  with_items: "{{ stat_cert.results }}"
+  tags: ['letsencrypt_keys']
+
+- name: ensure certificates are owned by letsencrypt user
+  file:
+    path: '{{ item.certpath }}'
+    mode: '644'
+    owner: '{{ letsencrypt_user }}'
+    group: '{{ letsencrypt_group }}'
+  with_items: "{{ letsencrypt_certs }}"
+  tags: ['letsencrypt_keys']
+
+- name: ensure chained certificates are owned by letsencrypt user
+  file:
+    path: '{{ item.chainedcertpath }}'
+    mode: '644'
+    owner: '{{ letsencrypt_user }}'
+    group: '{{ letsencrypt_group }}'
+  with_items: "{{ letsencrypt_certs }}"
+  when: item.chainedcertpath is defined
   tags: ['letsencrypt_keys']
 
 #################################################
