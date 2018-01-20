@@ -47,6 +47,9 @@ letsencrypt_default_key_owner: 'root'
 letsencrypt_default_key_group: 'root'
 letsencrypt_default_key_permissions: '0600'
 
+# reloading services
+letsencrypt_reload_services: []
+
 # how many days the certificate must be valid
 letsencrypt_min_valid_days: 30
 

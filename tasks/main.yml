@@ -106,7 +106,6 @@
   debug: var=account_public_key.stdout
   when: generate_account_key | changed
 
-
 - name: generate certificate renewal script
   template:
     src: renew-certs.py
@@ -185,4 +184,29 @@
     name: "letsencrypt certificate renewal"
     user: "{{ letsencrypt_user }}"
 
+- name: install cronjob for reloading services
+  cron:
+    job: "systemctl reload {{ item }}"
+    day: "{{ letsencrypt_cronjob_daysofmonth }}"
+    hour: 5
+    minute: 00
+    state: present
+    name: "letsencrypt reload service {{ item }}"
+    user: "root"
+  with_items: "{{ letsencrypt_reload_services }}"
+  when: (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int >= 15) or
+    (ansible_distribution == "Debian" and ansible_distribution_major_version|int >= 8)
+
+- name: install cronjob for reloading services
+  cron:
+    job: "/etc/init.d/{{ item }} reload"
+    day: "{{ letsencrypt_cronjob_daysofmonth }}"
+    hour: 5
+    minute: 00
+    state: present
+    name: "letsencrypt reload service {{ item }}"
+    user: "root"
+  with_items: "{{ letsencrypt_reload_services }}"
+  when: (ansible_distribution == "Ubuntu" and ansible_distribution_major_version|int < 15) or
+    (ansible_distribution == "Debian" and ansible_distribution_major_version|int < 8)
 ...
