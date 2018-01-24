@@ -178,7 +178,7 @@
   failed_when: (generate_initial_cert.stdout is defined and
     ('error' in generate_initial_cert.stdout or 'Error' in generate_initial_cert.stdout
       or 'Error' in generate_initial_cert.stderr))
-  when: ((generated_csr_single | changed) or (generated_csr_multi | changed) or (generated_key | changed) or (item.stat.exists == False)) and (letsencrypt_create_dummy_cert == True)
+  when: ((generated_csr_single | changed) or (generated_csr_multi | changed) or (generated_key | changed) or (item.stat.exists == False)) and (letsencrypt_create_dummy_cert == False)
   with_items: "{{ stat_cert.results }}"
   tags: ['letsencrypt_keys']
 
