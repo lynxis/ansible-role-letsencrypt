@@ -100,11 +100,11 @@
   command: >
     openssl rsa -in {{ letsencrypt_account_key }} -pubout
   register: account_public_key
-  when: generate_account_key | changed
+  when: generate_account_key.changed
 
 - name: "Please register the account public key with Letsencrypt, using for example https://gethttpsforfree.com/"
   debug: var=account_public_key.stdout
-  when: generate_account_key | changed
+  when: generate_account_key.changed
 
 - name: generate certificate renewal script
   template:
@@ -178,7 +178,7 @@
   failed_when: (generate_initial_cert.stdout is defined and
     ('error' in generate_initial_cert.stdout or 'Error' in generate_initial_cert.stdout
       or 'Error' in generate_initial_cert.stderr))
-  when: ((generated_csr_single | changed) or (generated_csr_multi | changed) or (generated_key | changed) or (item.stat.exists == False)) and (letsencrypt_create_dummy_cert == False)
+  when: ((generated_csr_single.changed) or (generated_csr_multi.changed) or (generated_key.changed) or (item.stat.exists == False)) and (letsencrypt_create_dummy_cert == False)
   with_items: "{{ stat_cert.results }}"
   tags: ['letsencrypt_keys']
 
